@@ -11,10 +11,10 @@ import (
 )
 
 type Policy struct {
-	APIVersion string `json:"apiversion"`
-	Kind       string `json:"kind"`
-	Metadata   string `json:"metadata"`
-	Spec       string `json:"spec"`
+	APIVersion string                 `json:"apiversion"`
+	Kind       string                 `json:"kind"`
+	Metadata   map[string]string      `json:"metadata"`
+	Spec       map[string]interface{} `json:"spec"`
 }
 
 func main() {

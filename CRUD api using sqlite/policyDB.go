@@ -2,6 +2,7 @@ package main
 
 import (
 	"database/sql"
+	"encoding/json"
 	"fmt"
 	"log"
 
@@ -10,10 +11,10 @@ import (
 
 //var db *sql.DB
 var schema = `
-CREATE TABLE IF NOT EXISTS policy( 
-id INTEGER  PRIMARY KEY AUTOINCREMENT,
-apiversion varchar(20) ,
-kind varchar(30) ,
+CREATE TABLE IF NOT EXISTS policy(
+id INTEGER PRIMARY KEY AUTOINCREMENT, 
+apiversion varchar(20), 
+kind varchar(20), 
 metadata  varchar(200),
 spec varchar(2000)
 );
@@ -39,27 +40,32 @@ func insertDatabase(m Policy, db *sql.DB) {
 
 	}
 
-	statement.Exec(m.APIVersion, m.Kind, m.Metadata, m.Spec)
+	statement.Exec(m.APIVersion, m.Kind, m.GetMetadata(), m.GetSpec())
 }
 
-func Readdatabase(db *sql.DB) []Policy {
+type Policyresult struct {
+	ID         string `json:"id"`
+	APIVersion string `json:"apiversion"`
+	Kind       string `json:"kind"`
+	Metadata   string `json:"metadata"`
+	Spec       string `json:"spec"`
+}
+
+func Readdatabase(db *sql.DB) []Policyresult {
 	fmt.Println("INSIDE READ :=>")
-	movies := []Policy{}
+	newpolicy := []Policyresult{}
 	statement, err := db.Query("Select * from policy")
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	var apiversion string
-	var kind string
-	var metadata string
-	var spec string
 	for statement.Next() {
-		statement.Scan(&apiversion, &kind, &metadata, &spec)
-		movie := Policy{APIVersion: apiversion, Kind: kind, Metadata: metadata, Spec: spec}
-		movies = append(movies, movie)
+		temp := Policyresult{}
+		statement.Scan(&temp.ID, &temp.APIVersion, &temp.Kind, &temp.Metadata, &temp.Spec)
+
+		newpolicy = append(newpolicy, temp)
 	}
-	return movies
+	return newpolicy
 }
 func DeleteDB(id string, db *sql.DB) {
 	statement, err := db.Prepare("Delete from policy where id = ?")
@@ -74,6 +80,19 @@ func UpdateDB(m Policy, id string, db *sql.DB) {
 	if err != nil {
 		log.Println("Error in Updation :", err)
 	}
-	statement.Exec(m.APIVersion, m.Kind, m.Metadata, m.Spec, id)
+	statement.Exec(m.APIVersion, m.Kind, m.GetMetadata(), m.GetSpec(), id)
 
+}
+
+/*get Policy Spec in String format*/
+func (p *Policy) GetSpec() string {
+	data, _ := json.Marshal(p.Spec)
+
+	return string(data)
+}
+
+/*get Policy Metadata in String format*/
+func (p *Policy) GetMetadata() string {
+	data, _ := json.Marshal(p.Metadata)
+	return string(data)
 }
